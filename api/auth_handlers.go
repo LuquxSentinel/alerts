@@ -1,34 +1,13 @@
-package main
+package api
 
 import (
 	"context"
+	"github.com/luqus/s/tokens"
 	"time"
-
+	
 	"github.com/gofiber/fiber/v2"
-	"github.com/luqus/s/storage"
 	"github.com/luqus/s/types"
 )
-
-type APIServer struct {
-	listenAddr   string
-	router       *fiber.App
-	authStorage  storage.AuthenticationStorage
-	alertStorage storage.AlertStorage
-}
-
-func NewAPIServer(listenAddr string, authstore storage.AuthenticationStorage, alertStorage storage.AlertStorage) *APIServer {
-	return &APIServer{
-		listenAddr:   listenAddr,
-		router:       fiber.New(),
-		authStorage:  authstore,
-		alertStorage: alertStorage,
-	}
-}
-
-func (api *APIServer) Run() error {
-
-	return api.router.Listen(api.listenAddr)
-}
 
 func (api *APIServer) registerUser(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -60,7 +39,10 @@ func (api *APIServer) registerUser(c *fiber.Ctx) error {
 
 	user := new(types.User)
 	user.Password = registerInput.Password
-	user.HashPassword()
+	err = user.HashPassword()
+	if err !=nil {
+		return c.Status(fiber.StatusInternalServerError).JSON("registration failed")
+	}
 	user.SetUID()
 	user.Email = registerInput.Email
 	user.FirstName = registerInput.FirstName
@@ -74,6 +56,7 @@ func (api *APIServer) registerUser(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON("registration failed")
 	}
 
+
 	return c.Status(fiber.StatusOK).JSON("user successfully created")
 }
 
@@ -83,7 +66,7 @@ func (api *APIServer) login(c *fiber.Ctx) error {
 
 	loginInput := new(types.LoginInput)
 	if err := c.BodyParser(loginInput); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON("invalif login input")
+		return c.Status(fiber.StatusBadRequest).JSON("invalid login input")
 	}
 
 	//fetch  user from database by email
@@ -98,8 +81,11 @@ func (api *APIServer) login(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON("wrong email or password")
 	}
 
-	// TODO: generate jwt
-	authorization := ""
+	// generate jwt
+	authorization, err := tokens.GenerateJwt(user.UID, user.Email)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON("token generation error")
+	}
 
 	// set authorization header
 	c.Set("authorization", authorization)

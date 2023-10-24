@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"github.com/gofiber/websocket/v2"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -20,4 +21,14 @@ func Authorization(c *fiber.Ctx) error {
 	// TODO: add uid to request context
 
 	return c.Next()
+}
+
+
+func WebSocketUpgrade(c *fiber.Ctx) error {
+	if websocket.IsWebSocketUpgrade(c) {
+		c.Locals("allowed", true)
+		return c.Next()
+	}
+
+	return fiber.ErrUpgradeRequired
 }

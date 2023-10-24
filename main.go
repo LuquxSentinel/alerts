@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"github.com/luqus/s/api"
 	"log"
 	"os"
 
@@ -41,7 +42,7 @@ func main() {
 	authstore := storage.NewAuthStorage(userCollection)
 	alertStore := storage.NewAlertStorage(alertCollection)
 	// Server Instance
-	server := NewAPIServer(listenAddr, authstore, alertStore)
+	server := api.NewAPIServer(listenAddr, authstore, alertStore)
 
 	// Start server
 	if err := server.Run(); err != nil {
