@@ -8,11 +8,17 @@ import (
 
 type PubSub interface {
 	Publish(ctx context.Context, data *types.PublishLocationInput) error
-	Subscribe(ctx context.Context, channelID string) (interface{}, error)
+	Subscribe(ctx context.Context, channelID string) (*types.Location, error)
 }
 
 type RedisPubSub struct {
 	client *redis.Client
+}
+
+func NewRedisPubSub(client *redis.Client) *RedisPubSub {
+	return &RedisPubSub{
+		client: client,
+	}
 }
 
 func RedisInit(redisConnString,password string, db int) *redis.Client{
@@ -25,6 +31,7 @@ func RedisInit(redisConnString,password string, db int) *redis.Client{
 	return client
 }
 
+
 func (r *RedisPubSub) Publish(ctx context.Context, data *types.PublishLocationInput) error {
 	err := r.client.Publish(ctx,data.ChannelID, data.Location)
 	if err != nil {
@@ -33,6 +40,7 @@ func (r *RedisPubSub) Publish(ctx context.Context, data *types.PublishLocationIn
 	
 	return nil
 }
+
 
 func (r*RedisPubSub) Subscribe(ctx context.Context,channelID string) (*types.Location,error) {
 	location,err := r.client.Subscribe(ctx, channelID).Receive(ctx)

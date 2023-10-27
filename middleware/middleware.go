@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"github.com/gofiber/websocket/v2"
+	"log"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -25,6 +26,7 @@ func Authorization(c *fiber.Ctx) error {
 
 
 func WebSocketUpgrade(c *fiber.Ctx) error {
+	log.Println("websocket upgrade")
 	if websocket.IsWebSocketUpgrade(c) {
 		c.Locals("allowed", true)
 		return c.Next()

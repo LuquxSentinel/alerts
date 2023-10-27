@@ -30,19 +30,27 @@ func main() {
 		log.Fatal(errors.New("MONGO_CONN_STR not found in .env"))
 	}
 
+	redisConnStr := os.Getenv("REDIS_CONN_STR")
+	if redisConnStr == "" {
+		log.Fatal(errors.New("REDIS_CONN_STR  not found in .env"))
+	}
+
 	// Database connection
 	client, err := storage.Init(dbString)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	redisClient := storage.RedisInit(redisConnStr, "", 0)
+
 	userCollection := client.Database("stayAlert").Collection("users")
 	alertCollection := client.Database("stayAlert").Collection("alert")
 
 	authstore := storage.NewAuthStorage(userCollection)
 	alertStore := storage.NewAlertStorage(alertCollection)
+	pubsub := storage.NewRedisPubSub(redisClient)
 	// Server Instance
-	server := api.NewAPIServer(listenAddr, authstore, alertStore)
+	server := api.NewAPIServer(listenAddr, authstore, alertStore, pubsub)
 
 	// Start server
 	if err := server.Run(); err != nil {

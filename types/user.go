@@ -58,7 +58,7 @@ func (u *User) FilterResponse() *ResponseUser {
 	return &ResponseUser{
 		Email:       u.Email,
 		PhoneNumber: u.PhoneNumber,
-		FirstName:   u.PhoneNumber,
+		FirstName:   u.FirstName,
 		LastName:    u.LastName,
 		CreatedAt:   u.CreatedAt,
 	}

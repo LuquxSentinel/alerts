@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/websocket/v2"
+	"github.com/luqus/s/middleware"
 	"github.com/luqus/s/storage"
 	"github.com/luqus/s/types"
 	"log"
@@ -32,6 +33,7 @@ func NewAPIServer(listenAddr string, authstore storage.AuthenticationStorage, al
 
 
 func (api *APIServer) publishLocation(c *websocket.Conn) {
+	log.Print("Upgraded")
 	publishLocationInput  := new(types.PublishLocationInput)
 	var (
 //		mt int
@@ -48,14 +50,17 @@ func (api *APIServer) publishLocation(c *websocket.Conn) {
 		if err != nil {
 			err = c.WriteJSON(fmt.Sprintf("error: %v",err.Error()))
 			if err != nil {
+				log.Println(err.Error())
 				break
 			}
 		}
+
 
 		err = api.pubSubStorage.Publish(context.Background(),publishLocationInput)
 		if err !=nil {
 			err = c.WriteJSON(fmt.Sprintf("error: %v",err.Error()))
 			if err != nil {
+				log.Println(err.Error())
 				break
 			}
 		}
@@ -96,8 +101,10 @@ func (api *APIServer) subcribeLocation(c *websocket.Conn)  {
 }
 
 func (api *APIServer) Run() error {
-
-
+	api.router.Post("/register", api.registerUser)
+	api.router.Post("/signin", api.login)
+	api.router.Use("/ws", middleware.WebSocketUpgrade)
+	api.router.Post("/ws/publish", websocket.New(api.publishLocation))
 
 	return api.router.Listen(api.listenAddr)
 }
